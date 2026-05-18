@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createHashRouter } from "react-router-dom";
 import Root from "./pages/Root";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -8,7 +8,7 @@ import JudgeScoring from "./pages/JudgeScoring";
 import Ranking from "./pages/Ranking";
 import RankingOnly from "./pages/RankingOnly";
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     path: "/login",
     Component: Login,
