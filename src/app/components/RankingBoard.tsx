@@ -246,7 +246,7 @@ export function RankingBoard({ showCopyLink = false }: RankingBoardProps) {
   };
 
   const handleCopyLink = () => {
-    const url = `${window.location.origin}/ranking-only`;
+    const url = `https://iluvbouldering-hue.github.io/KCC_boulder_ranking/#/ranking-only`;
     
     // Fallback method that works without Clipboard API
     const textArea = document.createElement('textarea');
