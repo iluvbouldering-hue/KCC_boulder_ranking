@@ -12,9 +12,9 @@ import {
   Maximize 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import whistleMp3 from '../assets/whistle.mp3';
-import airhornMp3 from '../assets/airhorn.mp3';
-import buzzerMp3 from '../assets/buzzer.mp3';
+import whistleMp3 from '../../assets/whistle.mp3';
+import airhornMp3 from '../../assets/airhorn.mp3';
+import buzzerMp3 from '../../assets/buzzer.mp3';
 
 type SoundType = 'beep' | 'airhorn' | 'whistle' | 'buzzer' | 'bell';
 
