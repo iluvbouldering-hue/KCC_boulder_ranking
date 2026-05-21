@@ -12,6 +12,9 @@ import {
   Maximize 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import whistleMp3 from '../assets/whistle.mp3';
+import airhornMp3 from '../assets/airhorn.mp3';
+import buzzerMp3 from '../assets/buzzer.mp3';
 
 type SoundType = 'beep' | 'airhorn' | 'whistle' | 'buzzer' | 'bell';
 
@@ -61,20 +64,22 @@ export function TimerButton() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const minimizedRef = useRef<HTMLDivElement>(null);
+  const whistleAudio = useRef<HTMLAudioElement | null>(null);
+const airhornAudio = useRef<HTMLAudioElement | null>(null);
+const buzzerAudio = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Initialize Web Audio API
-    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-    };
-  }, []);
+  // Initialize audio files
+  whistleAudio.current = new Audio(whistleMp3);
+  airhornAudio.current = new Audio(airhornMp3);
+  buzzerAudio.current = new Audio(buzzerMp3);
+
+  return () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+  };
+}, []);
 
   useEffect(() => {
     if (isRunning) {
@@ -132,78 +137,28 @@ export function TimerButton() {
   };
 
   const playAlert = (soundType: SoundType) => {
-    if (!audioContextRef.current) return;
-    const ctx = audioContextRef.current;
-    
-    switch (soundType) {
-      case 'beep':
-        [0, 0.15, 0.3].forEach((time) => {
-          const oscillator = ctx.createOscillator();
-          const gainNode = ctx.createGain();
-          oscillator.connect(gainNode);
-          gainNode.connect(ctx.destination);
-          oscillator.frequency.value = 1200;
-          oscillator.type = 'square';
-          gainNode.gain.setValueAtTime(0.5, ctx.currentTime + time);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + time + 0.1);
-          oscillator.start(ctx.currentTime + time);
-          oscillator.stop(ctx.currentTime + time + 0.1);
-        });
-        break;
-      case 'airhorn':
-        const airhorn = ctx.createOscillator();
-        const airhornGain = ctx.createGain();
-        airhorn.connect(airhornGain);
-        airhornGain.connect(ctx.destination);
-        airhorn.frequency.setValueAtTime(200, ctx.currentTime);
-        airhorn.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 1);
-        airhorn.type = 'sawtooth';
-        airhornGain.gain.setValueAtTime(0.6, ctx.currentTime);
-        airhornGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
-        airhorn.start(ctx.currentTime);
-        airhorn.stop(ctx.currentTime + 1);
-        break;
-      case 'whistle':
-        const whistle = ctx.createOscillator();
-        const whistleGain = ctx.createGain();
-        whistle.connect(whistleGain);
-        whistleGain.connect(ctx.destination);
-        whistle.frequency.setValueAtTime(2000, ctx.currentTime);
-        whistle.frequency.exponentialRampToValueAtTime(1500, ctx.currentTime + 0.3);
-        whistle.type = 'sine';
-        whistleGain.gain.setValueAtTime(0.4, ctx.currentTime);
-        whistleGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-        whistle.start(ctx.currentTime);
-        whistle.stop(ctx.currentTime + 0.3);
-        break;
-      case 'buzzer':
-        const buzzer = ctx.createOscillator();
-        const buzzerGain = ctx.createGain();
-        buzzer.connect(buzzerGain);
-        buzzerGain.connect(ctx.destination);
-        buzzer.frequency.setValueAtTime(1000, ctx.currentTime);
-        buzzer.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 0.5);
-        buzzer.type = 'square';
-        buzzerGain.gain.setValueAtTime(0.5, ctx.currentTime);
-        buzzerGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-        buzzer.start(ctx.currentTime);
-        buzzer.stop(ctx.currentTime + 0.5);
-        break;
-      case 'bell':
-        const bell = ctx.createOscillator();
-        const bellGain = ctx.createGain();
-        bell.connect(bellGain);
-        bellGain.connect(ctx.destination);
-        bell.frequency.setValueAtTime(500, ctx.currentTime);
-        bell.frequency.exponentialRampToValueAtTime(250, ctx.currentTime + 0.5);
-        bell.type = 'sine';
-        bellGain.gain.setValueAtTime(0.5, ctx.currentTime);
-        bellGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-        bell.start(ctx.currentTime);
-        bell.stop(ctx.currentTime + 0.5);
-        break;
-    }
-  };
+  switch (soundType) {
+    case 'whistle':
+      whistleAudio.current?.play();
+      break;
+
+    case 'airhorn':
+      airhornAudio.current?.play();
+      break;
+
+    case 'buzzer':
+      buzzerAudio.current?.play();
+      break;
+
+    case 'beep':
+      whistleAudio.current?.play();
+      break;
+
+    case 'bell':
+      whistleAudio.current?.play();
+      break;
+  }
+};
 
   const handleStart = () => {
     if (settings.preCountdownSeconds > 0) {
