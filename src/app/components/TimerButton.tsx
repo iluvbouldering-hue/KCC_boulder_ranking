@@ -449,8 +449,69 @@ const buzzerAudio = useRef<HTMLAudioElement | null>(null);
   </label>
 
   <div className="grid grid-cols-3 gap-2">
-    {/* hours/min/sec inputs here */}
-  </div>
+  {/* Hours */}
+  <input
+    type="number"
+    min="0"
+    max="23"
+    placeholder="HH"
+    value={Math.floor(settings.officialCountdownSeconds / 3600)}
+    onChange={(e) => {
+      const hours = parseInt(e.target.value) || 0;
+      const minutes = Math.floor((settings.officialCountdownSeconds % 3600) / 60);
+      const seconds = settings.officialCountdownSeconds % 60;
+
+      setSettings({
+        ...settings,
+        officialCountdownSeconds:
+          hours * 3600 + minutes * 60 + seconds,
+      });
+    }}
+    className="w-full px-4 py-2 bg-slate-700 text-white border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500"
+  />
+
+  {/* Minutes */}
+  <input
+    type="number"
+    min="0"
+    max="59"
+    placeholder="MM"
+    value={Math.floor((settings.officialCountdownSeconds % 3600) / 60)}
+    onChange={(e) => {
+      const hours = Math.floor(settings.officialCountdownSeconds / 3600);
+      const minutes = parseInt(e.target.value) || 0;
+      const seconds = settings.officialCountdownSeconds % 60;
+
+      setSettings({
+        ...settings,
+        officialCountdownSeconds:
+          hours * 3600 + minutes * 60 + seconds,
+      });
+    }}
+    className="w-full px-4 py-2 bg-slate-700 text-white border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500"
+  />
+
+  {/* Seconds */}
+  <input
+    type="number"
+    min="0"
+    max="59"
+    placeholder="SS"
+    value={settings.officialCountdownSeconds % 60}
+    onChange={(e) => {
+      const hours = Math.floor(settings.officialCountdownSeconds / 3600);
+      const minutes = Math.floor((settings.officialCountdownSeconds % 3600) / 60);
+      const seconds = parseInt(e.target.value) || 0;
+
+      setSettings({
+        ...settings,
+        officialCountdownSeconds:
+          hours * 3600 + minutes * 60 + seconds,
+      });
+    }}
+    className="w-full px-4 py-2 bg-slate-700 text-white border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500"
+  />
+</div>
 
   <p className="text-xs text-slate-400 mt-1">
     Main competition timer duration
