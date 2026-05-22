@@ -117,7 +117,7 @@ export default function Home() {
         </div>
 
         <div className="mt-8 pt-8 border-t border-slate-200 text-center text-sm text-slate-500">
-          <p>Official Competition Management System</p>
+          <p></p>
         </div>
       </div>
     </div>
