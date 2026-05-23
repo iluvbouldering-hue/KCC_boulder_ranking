@@ -5,7 +5,7 @@ import { SearchableSelect } from '../components/SearchableSelect';
 import { Save, Trash2, Undo2, ChevronRight, ChevronLeft, History, X as CloseIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { database } from '../lib/firebase';
-import { ref, push, onValue, remove, get } from 'firebase/database';
+import { ref, push, onValue, remove } from 'firebase/database';
 import { getCurrentUser } from '../lib/auth';
 
 interface Student {
@@ -136,12 +136,18 @@ const [scoreSortOrder, setScoreSortOrder] = useState<'asc' | 'desc'>('asc');
     const grouped: { [key: string]: Score[] } = {};
 
     scores.forEach((score) => {
-      const key = `${score.id}-${score.round}-${score.boulder}`;
-      if (!grouped[key]) {
-        grouped[key] = [];
-      }
-      grouped[key].push(score);
-    });
+  const key = JSON.stringify({
+    id: score.id,
+    round: score.round,
+    boulder: score.boulder,
+  });
+
+  if (!grouped[key]) {
+    grouped[key] = [];
+  }
+
+  grouped[key].push(score);
+});
 
     const latestScores: Score[] = [];
     Object.values(grouped).forEach((versions) => {
@@ -234,14 +240,12 @@ const [scoreSortOrder, setScoreSortOrder] = useState<'asc' | 'desc'>('asc');
   setAttemptCount(newAttemptCount);
 
   if (type === 'zone') {
-    // AZ only records FIRST zone attempt
-    if (az === null) {
+    if (az == null) {
       setAz(newAttemptCount);
     }
   }
 
   if (type === 'top') {
-    // If no zone before top, zone = same attempt as top
     setAz((prevAz) => prevAz ?? newAttemptCount);
     setAt(newAttemptCount);
     setIsTopReached(true);
@@ -276,12 +280,11 @@ const [scoreSortOrder, setScoreSortOrder] = useState<'asc' | 'desc'>('asc');
       id: selectedStudent,
       round,
       boulder: Number(boulder),
-      at,
-      az,
-      attemptCount,
+      at: at ?? null,
+      az: az ?? null,
+      attemptCount: attemptCount ?? 0,
       timestamp: Date.now(),
       version: nextVersion,
-      editedFromLatest: isEditingLatest,
     };
 
     await push(ref(database, 'scores'), newScore);
@@ -319,7 +322,13 @@ const [scoreSortOrder, setScoreSortOrder] = useState<'asc' | 'desc'>('asc');
       setSelectAll(false);
     } else {
       const allKeys = new Set(
-        getLatestScores().map((s) => `${s.id}-${s.round}-${s.boulder}`)
+        getLatestScores().map((s) =>
+  JSON.stringify({
+    id: s.id,
+    round: s.round,
+    boulder: s.boulder,
+  })
+)
       );
       setSelectedScores(allKeys);
       setSelectAll(true);
@@ -337,40 +346,43 @@ const [scoreSortOrder, setScoreSortOrder] = useState<'asc' | 'desc'>('asc');
   };
 
   const handleDeleteSelected = async () => {
-    if (selectedScores.size === 0) {
-      alert('Please select scores to delete');
-      return;
-    }
+  if (selectedScores.size === 0) {
+    alert('Please select scores to delete');
+    return;
+  }
 
-    const count = selectedScores.size;
-    if (!window.confirm(`Delete ${count} selected score${count > 1 ? 's' : ''} and all their versions?`)) {
-      return;
-    }
+  const count = selectedScores.size;
+  if (!window.confirm(`Delete ${count} selected score${count > 1 ? 's' : ''} and all their versions?`)) {
+    return;
+  }
 
-    // For each selected combo, delete ALL versions
-    const deletePromises: Promise<void>[] = [];
+  const deletePromises: Promise<void>[] = [];
 
-    selectedScores.forEach((comboKey) => {
-      const [id, round, boulderStr] = comboKey.split('-');
-      const boulder = Number(boulderStr);
+  selectedScores.forEach((comboKey) => {
+    const selected = JSON.parse(comboKey);
+    const id = selected.id;
+    const round = selected.round;
+    const boulder = Number(selected.boulder);
 
-      // Find all versions of this score
-      const versionsToDelete = scores.filter(
-        (s) => s.id === id && s.round === round && s.boulder === boulder && s.key
-      );
+    const versionsToDelete = scores.filter(
+      (s) =>
+        s.id === id &&
+        s.round === round &&
+        s.boulder === boulder &&
+        s.key
+    );
 
-      versionsToDelete.forEach((score) => {
-        if (score.key) {
-          const scoreRef = ref(database, `scores/${score.key}`);
-          deletePromises.push(remove(scoreRef));
-        }
-      });
+    versionsToDelete.forEach((score) => {
+      if (score.key) {
+        deletePromises.push(remove(ref(database, `scores/${score.key}`)));
+      }
     });
+  });
 
-    await Promise.all(deletePromises);
-    setSelectedScores(new Set());
-    setSelectAll(false);
-  };
+  await Promise.all(deletePromises);
+  setSelectedScores(new Set());
+  setSelectAll(false);
+};
 
   const handleUndo = () => {
     if (attemptHistory.length > 0) {
@@ -410,8 +422,8 @@ const startEditFromLatest = () => {
     Math.max(clashLatestScore.at ?? 0, clashLatestScore.az ?? 0);
 
   setAttemptCount(latestAttemptCount);
-  setAz(clashLatestScore.az);
-  setAt(clashLatestScore.at);
+  setAz(clashLatestScore.az ?? null);
+  setAt(clashLatestScore.at ?? null);
 
   setIsTopReached(false);
   setIsEditingLatest(true);
@@ -813,7 +825,11 @@ const startCreateNew = () => {
                     </tr>
                   ) : (
                     getFilteredAndSortedScores().map((score) => {
-                      const comboKey = `${score.id}-${score.round}-${score.boulder}`;
+                      const comboKey = JSON.stringify({
+  id: score.id,
+  round: score.round,
+  boulder: score.boulder,
+});
                       const hasHistory = hasEditHistory(score.id, score.round, score.boulder);
 
                       return (
