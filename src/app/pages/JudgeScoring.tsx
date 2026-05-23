@@ -65,6 +65,7 @@ export default function JudgeScoring() {
   const [scoreSearch, setScoreSearch] = useState('');
 const [scoreSortBy, setScoreSortBy] = useState<'name' | 'id' | 'round' | 'boulder' | 'at' | 'az'>('name');
 const [scoreSortOrder, setScoreSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [isEditingLatest, setIsEditingLatest] = useState(false);
 
   // Multi-step state
   const [currentStep, setCurrentStep] = useState(1);
@@ -233,12 +234,14 @@ const [scoreSortOrder, setScoreSortOrder] = useState<'asc' | 'desc'>('asc');
   setAttemptCount(newAttemptCount);
 
   if (type === 'zone') {
+    // AZ only records FIRST zone attempt
     if (az === null) {
       setAz(newAttemptCount);
     }
   }
 
   if (type === 'top') {
+    // If no zone before top, zone = same attempt as top
     setAz((prevAz) => prevAz ?? newAttemptCount);
     setAt(newAttemptCount);
     setIsTopReached(true);
@@ -254,48 +257,56 @@ const [scoreSortOrder, setScoreSortOrder] = useState<'asc' | 'desc'>('asc');
   };
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    // Get existing versions
+  try {
     const existingVersions = scores.filter(
-      (s) => s.id === selectedStudent && s.round === round && s.boulder === Number(boulder)
+      (s) =>
+        s.id === selectedStudent &&
+        s.round === round &&
+        s.boulder === Number(boulder)
     );
 
-    const nextVersion = existingVersions.length > 0
-      ? Math.max(...existingVersions.map((s) => s.version || 0)) + 1
-      : 1;
+    const nextVersion =
+      existingVersions.length > 0
+        ? Math.max(...existingVersions.map((s) => s.version || 0)) + 1
+        : 1;
 
     const newScore = {
-  id: selectedStudent,
-  round,
-  boulder: Number(boulder),
-  at,
-  az,
-  attemptCount,
-  timestamp: Date.now(),
-  version: nextVersion,
-};
+      id: selectedStudent,
+      round,
+      boulder: Number(boulder),
+      at,
+      az,
+      attemptCount,
+      timestamp: Date.now(),
+      version: nextVersion,
+      editedFromLatest: isEditingLatest,
+    };
 
-    // Always push as a new entry (never update)
-    const scoresRef = ref(database, 'scores');
-    await push(scoresRef, newScore);
+    await push(ref(database, 'scores'), newScore);
 
-    // Move to next step if can view scores
+    setIsEditingLatest(false);
+
     if (canViewScores) {
       setCurrentStep(3);
     } else {
-      // Reset form for judges without view access
       resetForm();
     }
-  };
+  } catch (error) {
+    console.error('Failed to save score:', error);
+    alert('Failed to save score. Please try again.');
+  }
+};
 
   const resetForm = () => {
-    setSelectedStudent('');
-    setRound('');
-    setBoulder('');
-    setCurrentStep(1);
-    resetAttempts();
-  };
+  setSelectedStudent('');
+  setRound('');
+  setBoulder('');
+  setCurrentStep(1);
+  setIsEditingLatest(false);
+  resetAttempts();
+};
 
   const getStudentName = (id: string) => {
     const student = students.find((s) => s.id === id);
@@ -402,8 +413,8 @@ const startEditFromLatest = () => {
   setAz(clashLatestScore.az);
   setAt(clashLatestScore.at);
 
-  // Allow judge to continue editing even if Top was already reached
-  setIsTopReached(false);
+  setIsTopReached(clashLatestScore.at !== null);
+  setIsEditingLatest(true);
 
   setAttemptHistory([]);
   setShowClashModal(false);
@@ -412,6 +423,7 @@ const startEditFromLatest = () => {
 
 const startCreateNew = () => {
   resetAttempts();
+  setIsEditingLatest(false);
   setShowClashModal(false);
   setCurrentStep(2);
 };
