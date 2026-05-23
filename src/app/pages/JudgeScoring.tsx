@@ -413,7 +413,7 @@ const startEditFromLatest = () => {
   setAz(clashLatestScore.az);
   setAt(clashLatestScore.at);
 
-  setIsTopReached(clashLatestScore.at !== null);
+  setIsTopReached(false);
   setIsEditingLatest(true);
 
   setAttemptHistory([]);
